@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * the endpoint metadata required for {@link RestClient} creation.
  * <p>
  * Binding names are resolved from the {@code @Named} annotation on the field.
- * The {@link RestClientTypeListener} uses these names to look up metadata here.
  */
 @Log4j2
 public class RestClientRegistry
@@ -85,7 +84,7 @@ public class RestClientRegistry
                         continue;
                     }
 
-                    Endpoint wrapped = wrapEndpoint(endpointAnnotation);
+                    Endpoint wrapped = wrapEndpoint(endpointAnnotation, bindingName);
                     String resolvedUrl = resolveUrl(wrapped.url());
 
                     Type[] typeArgs = extractTypeArguments(field);
@@ -101,7 +100,7 @@ public class RestClientRegistry
                     endpointReceiveClasses.put(bindingName, receiveClass);
 
                     count++;
-                    log.info("Registered REST endpoint: '{}' -> {} [Send={}, Receive={}] (field: {}.{})",
+                    log.debug("Registered REST endpoint: '{}' -> {} [Send={}, Receive={}] (field: {}.{})",
                             bindingName, resolvedUrl,
                             sendType.getTypeName(), receiveType.getTypeName(),
                             clazz.getSimpleName(), field.getName());
@@ -131,58 +130,58 @@ public class RestClientRegistry
     // Annotation wrapping (environment variable resolution)
     // ──────────────────────────────────────────────────────────────────────────
 
-    private static Endpoint wrapEndpoint(Endpoint source)
+    private static Endpoint wrapEndpoint(Endpoint source, String bindingName)
     {
         return new Endpoint()
         {
             @Override public Class<? extends Annotation> annotationType() { return Endpoint.class; }
-            @Override public String url() { return resolveEnv("REST_CLIENT_URL", source.url()); }
-            @Override public String method() { return resolveEnv("REST_CLIENT_METHOD", source.method()); }
+            @Override public String url() { return resolveEnv("REST_CLIENT_URL_" + bindingName, source.url()); }
+            @Override public String method() { return resolveEnv("REST_CLIENT_METHOD_" + bindingName, source.method()); }
             @Override public Protocol protocol()
             {
-                String proto = resolveEnv("REST_CLIENT_PROTOCOL", source.protocol().name());
+                String proto = resolveEnv("REST_CLIENT_PROTOCOL_" + bindingName, source.protocol().name());
                 try { return Protocol.valueOf(proto); }
                 catch (IllegalArgumentException e) { return source.protocol(); }
             }
-            @Override public EndpointSecurity security() { return wrapSecurity(source.security()); }
-            @Override public EndpointOptions options() { return wrapOptions(source.options()); }
+            @Override public EndpointSecurity security() { return wrapSecurity(source.security(), bindingName); }
+            @Override public EndpointOptions options() { return wrapOptions(source.options(), bindingName); }
         };
     }
 
-    private static EndpointSecurity wrapSecurity(EndpointSecurity source)
+    private static EndpointSecurity wrapSecurity(EndpointSecurity source, String bindingName)
     {
         return new EndpointSecurity()
         {
             @Override public Class<? extends Annotation> annotationType() { return EndpointSecurity.class; }
             @Override public SecurityType value() { return source.value(); }
-            @Override public String token() { return resolveEnv("REST_CLIENT_TOKEN", source.token()); }
-            @Override public String username() { return resolveEnv("REST_CLIENT_USERNAME", source.username()); }
-            @Override public String password() { return resolveEnv("REST_CLIENT_PASSWORD", source.password()); }
-            @Override public String apiKey() { return resolveEnv("REST_CLIENT_API_KEY", source.apiKey()); }
-            @Override public String apiKeyHeader() { return resolveEnv("REST_CLIENT_API_KEY_HEADER", source.apiKeyHeader()); }
+            @Override public String token() { return resolveEnv("REST_CLIENT_TOKEN_" + bindingName, source.token()); }
+            @Override public String username() { return resolveEnv("REST_CLIENT_USERNAME_" + bindingName, source.username()); }
+            @Override public String password() { return resolveEnv("REST_CLIENT_PASSWORD_" + bindingName, source.password()); }
+            @Override public String apiKey() { return resolveEnv("REST_CLIENT_API_KEY_" + bindingName, source.apiKey()); }
+            @Override public String apiKeyHeader() { return resolveEnv("REST_CLIENT_API_KEY_HEADER_" + bindingName, source.apiKeyHeader()); }
         };
     }
 
-    private static EndpointOptions wrapOptions(EndpointOptions source)
+    private static EndpointOptions wrapOptions(EndpointOptions source, String bindingName)
     {
         return new EndpointOptions()
         {
             @Override public Class<? extends Annotation> annotationType() { return EndpointOptions.class; }
-            @Override public int connectTimeout() { return Integer.parseInt(resolveEnv("REST_CLIENT_CONNECT_TIMEOUT", String.valueOf(source.connectTimeout()))); }
-            @Override public int idleTimeout() { return Integer.parseInt(resolveEnv("REST_CLIENT_IDLE_TIMEOUT", String.valueOf(source.idleTimeout()))); }
-            @Override public int readTimeout() { return Integer.parseInt(resolveEnv("REST_CLIENT_READ_TIMEOUT", String.valueOf(source.readTimeout()))); }
-            @Override public boolean trustAll() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_TRUST_ALL", String.valueOf(source.trustAll()))); }
-            @Override public boolean verifyHost() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_VERIFY_HOST", String.valueOf(source.verifyHost()))); }
-            @Override public boolean ssl() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_SSL", String.valueOf(source.ssl()))); }
-            @Override public int maxPoolSize() { return Integer.parseInt(resolveEnv("REST_CLIENT_MAX_POOL_SIZE", String.valueOf(source.maxPoolSize()))); }
-            @Override public boolean keepAlive() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_KEEP_ALIVE", String.valueOf(source.keepAlive()))); }
-            @Override public boolean decompression() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_DECOMPRESSION", String.valueOf(source.decompression()))); }
-            @Override public boolean followRedirects() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_FOLLOW_REDIRECTS", String.valueOf(source.followRedirects()))); }
-            @Override public int maxRedirects() { return Integer.parseInt(resolveEnv("REST_CLIENT_MAX_REDIRECTS", String.valueOf(source.maxRedirects()))); }
-            @Override public String defaultContentType() { return resolveEnv("REST_CLIENT_CONTENT_TYPE", source.defaultContentType()); }
-            @Override public String defaultAccept() { return resolveEnv("REST_CLIENT_ACCEPT", source.defaultAccept()); }
-            @Override public int retryAttempts() { return Integer.parseInt(resolveEnv("REST_CLIENT_RETRY_ATTEMPTS", String.valueOf(source.retryAttempts()))); }
-            @Override public long retryDelay() { return Long.parseLong(resolveEnv("REST_CLIENT_RETRY_DELAY", String.valueOf(source.retryDelay()))); }
+            @Override public int connectTimeout() { return Integer.parseInt(resolveEnv("REST_CLIENT_CONNECT_TIMEOUT_" + bindingName, String.valueOf(source.connectTimeout()))); }
+            @Override public int idleTimeout() { return Integer.parseInt(resolveEnv("REST_CLIENT_IDLE_TIMEOUT_" + bindingName, String.valueOf(source.idleTimeout()))); }
+            @Override public int readTimeout() { return Integer.parseInt(resolveEnv("REST_CLIENT_READ_TIMEOUT_" + bindingName, String.valueOf(source.readTimeout()))); }
+            @Override public boolean trustAll() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_TRUST_ALL_" + bindingName, String.valueOf(source.trustAll()))); }
+            @Override public boolean verifyHost() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_VERIFY_HOST_" + bindingName, String.valueOf(source.verifyHost()))); }
+            @Override public boolean ssl() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_SSL_" + bindingName, String.valueOf(source.ssl()))); }
+            @Override public int maxPoolSize() { return Integer.parseInt(resolveEnv("REST_CLIENT_MAX_POOL_SIZE_" + bindingName, String.valueOf(source.maxPoolSize()))); }
+            @Override public boolean keepAlive() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_KEEP_ALIVE_" + bindingName, String.valueOf(source.keepAlive()))); }
+            @Override public boolean decompression() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_DECOMPRESSION_" + bindingName, String.valueOf(source.decompression()))); }
+            @Override public boolean followRedirects() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_FOLLOW_REDIRECTS_" + bindingName, String.valueOf(source.followRedirects()))); }
+            @Override public int maxRedirects() { return Integer.parseInt(resolveEnv("REST_CLIENT_MAX_REDIRECTS_" + bindingName, String.valueOf(source.maxRedirects()))); }
+            @Override public String defaultContentType() { return resolveEnv("REST_CLIENT_CONTENT_TYPE_" + bindingName, source.defaultContentType()); }
+            @Override public String defaultAccept() { return resolveEnv("REST_CLIENT_ACCEPT_" + bindingName, source.defaultAccept()); }
+            @Override public int retryAttempts() { return Integer.parseInt(resolveEnv("REST_CLIENT_RETRY_ATTEMPTS_" + bindingName, String.valueOf(source.retryAttempts()))); }
+            @Override public long retryDelay() { return Long.parseLong(resolveEnv("REST_CLIENT_RETRY_DELAY_" + bindingName, String.valueOf(source.retryDelay()))); }
         };
     }
 

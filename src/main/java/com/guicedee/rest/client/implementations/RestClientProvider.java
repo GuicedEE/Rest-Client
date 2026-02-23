@@ -52,7 +52,7 @@ public class RestClientProvider implements Provider<RestClient>
         Vertx vertx = VertXPreStartup.getVertx();
         WebClient webClient = WebClient.create(vertx);
         log.info("Created RestClient for endpoint: {} -> {}", bindingName, baseUrl);
-        return new RestClient(webClient, endpoint, baseUrl, sendType, receiveType, receiveClass);
+        return new RestClient(webClient, endpoint, bindingName, baseUrl, sendType, receiveType, receiveClass);
     }
 }
 
