@@ -1,6 +1,6 @@
 # GuicedEE REST Client
 
-[![Build](https://github.com/GedMarc/GuicedRestClient/actions/workflows/build.yml/badge.svg)](https://github.com/GedMarc/GuicedRestClient/actions/workflows/build.yml)
+[![Build](https://github.com/GuicedEE/Rest-Client/actions/workflows/build.yml/badge.svg)](https://github.com/GedMarc/GuicedRestClient/actions/workflows/build.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.guicedee/rest-client)](https://central.sonatype.com/artifact/com.guicedee/rest-client)
 [![Maven Snapshot](https://img.shields.io/nexus/s/com.guicedee/rest-client?server=https%3A%2F%2Foss.sonatype.org&label=Maven%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/com/guicedee/rest-client/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://www.apache.org/licenses/LICENSE-2.0)
@@ -150,11 +150,12 @@ Field-level URLs that start with `/` are appended to the package-level base URL.
 
 ### Binding names
 
-The `@Named` annotation determines the Guice binding key. If omitted, the endpoint URL is used as the binding name.
+The `@Named` annotation determines the Guice binding key. Once an `@Endpoint` is registered, the client can then be injected by name.
 
 ```java
 // Inject by name
 @Named("create-user")
+@Inject
 private RestClient<CreateUserRequest, UserResponse> client;
 
 // Or retrieve programmatically

@@ -16,7 +16,7 @@
     <name>Guiced Rest Client</name>
     <description>An integration library for Rest Clients
     </description>
-    <url>https://github.com/GedMarc/GuicedRestClient</url>
+    <url>https://github.com/GuicedEE/Rest-Client</url>
 
     <properties>
         <ignore.moditect>true</ignore.moditect>
