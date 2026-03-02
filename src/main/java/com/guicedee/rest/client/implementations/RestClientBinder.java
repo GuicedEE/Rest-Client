@@ -66,9 +66,9 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
             }
 
             bind(key).toProvider(() -> {
-                // Resolve URL lazily so environment/system-property placeholders
-                // pick up values that are set after Guice module configuration
-                String lazyResolvedUrl = RestClientRegistry.resolveUrl(wrappedEndpoint.url());
+                // Use the pre-resolved URL from the registry (includes package-level base URL
+                // concatenation and environment variable resolution)
+                String lazyResolvedUrl = RestClientRegistry.getEndpointBaseUrls().get(bindingName);
                 WebClient webClient = webClientCache.computeIfAbsent(bindingName, k -> {
                     WebClientOptions options = buildWebClientOptions(wrappedEndpoint);
                     return WebClient.create(VertXPreStartup.getVertx(), options);

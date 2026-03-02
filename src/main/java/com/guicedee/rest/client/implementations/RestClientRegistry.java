@@ -87,6 +87,20 @@ public class RestClientRegistry
                     Endpoint wrapped = wrapEndpoint(endpointAnnotation, bindingName);
                     String resolvedUrl = resolveUrl(wrapped.url());
 
+                    // If the URL is relative (starts with /), look for a package-level @Endpoint
+                    // on the closest enclosing package-info.java and prepend its base URL
+                    if (resolvedUrl.startsWith("/")) {
+                        String packageBaseUrl = resolvePackageBaseUrl(clazz);
+                        if (packageBaseUrl != null && !packageBaseUrl.isEmpty()) {
+                            // Strip trailing slash from base URL to avoid double slashes
+                            if (packageBaseUrl.endsWith("/")) {
+                                packageBaseUrl = packageBaseUrl.substring(0, packageBaseUrl.length() - 1);
+                            }
+                            resolvedUrl = packageBaseUrl + resolvedUrl;
+                            log.debug("Resolved relative URL using package-level @Endpoint: {}", resolvedUrl);
+                        }
+                    }
+
                     Type[] typeArgs = extractTypeArguments(field);
                     Type sendType = typeArgs[0];
                     Type receiveType = typeArgs[1];
@@ -205,6 +219,47 @@ public class RestClientRegistry
     static String resolveUrl(String value)
     {
         return RestClient.resolveEnvPlaceholder(value);
+    }
+
+    /**
+     * Walks up the package hierarchy of the given class looking for a
+     * {@code package-info.java} annotated with {@code @Endpoint}.
+     * Returns the resolved base URL from the closest matching package, or {@code null}.
+     * <p>
+     * Uses ClassGraph's scan result to reliably find package-level annotations
+     * even when the package-info class hasn't been loaded by the classloader yet.
+     */
+    private static String resolvePackageBaseUrl(Class<?> clazz)
+    {
+        String packageName = clazz.getPackageName();
+        var scanResult = IGuiceContext.instance().getScanResult();
+
+        while (!packageName.isEmpty())
+        {
+            try
+            {
+                var packageInfo = scanResult.getPackageInfo(packageName);
+                if (packageInfo != null)
+                {
+                    var annotationInfo = packageInfo.getAnnotationInfo(Endpoint.class.getName());
+                    if (annotationInfo != null)
+                    {
+                        Object urlValue = annotationInfo.getParameterValues().getValue("url");
+                        if (urlValue != null && !urlValue.toString().isEmpty())
+                        {
+                            return resolveUrl(urlValue.toString());
+                        }
+                    }
+                }
+            }
+            catch (Exception ignored) { }
+
+            // Move up one package level
+            int lastDot = packageName.lastIndexOf('.');
+            if (lastDot < 0) break;
+            packageName = packageName.substring(0, lastDot);
+        }
+        return null;
     }
 
     private static String resolveEnv(String envKey, String defaultValue)
