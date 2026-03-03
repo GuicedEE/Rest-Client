@@ -1,4 +1,4 @@
-name: GuicedEE Rest Client Library
+name: GuicedEE Rest Client
 on:
   workflow_dispatch:
     inputs:

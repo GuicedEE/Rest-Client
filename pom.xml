@@ -21,6 +21,7 @@
     <properties>
         <ignore.moditect>true</ignore.moditect>
         <flatten.pom>true</flatten.pom>
+        <project.scm.nameUrl>/GuicedEE/Rest-Client</project.scm.nameUrl>
     </properties>
 
     <dependencies>
