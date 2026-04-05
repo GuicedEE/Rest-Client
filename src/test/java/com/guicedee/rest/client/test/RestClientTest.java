@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RestClientTest {
 
-    @SuppressWarnings("BindingAnnotationWithoutInject")
     @Endpoint(url = "http://localhost:" + TestHttpServer.PORT + "/test",
             method = "GET",
             options = @EndpointOptions(readTimeout = 5000)
