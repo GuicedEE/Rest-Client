@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/GuicedEE/Rest-Client/actions/workflows/build.yml/badge.svg)](https://github.com/GedMarc/GuicedRestClient/actions/workflows/build.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.guicedee/rest-client)](https://central.sonatype.com/artifact/com.guicedee/rest-client)
-[![Maven Snapshot](https://img.shields.io/nexus/s/com.guicedee/rest-client?server=https%3A%2F%2Foss.sonatype.org&label=Maven%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/com/guicedee/rest-client/)
+[![Snapshot](https://img.shields.io/badge/Snapshot-2.0.0-SNAPSHOT-orange)](https://github.com/GuicedEE/Packages/packages/maven/com.guicedee.rest-client)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://www.apache.org/licenses/LICENSE-2.0)
 
 ![Java 25+](https://img.shields.io/badge/Java-25%2B-green)
@@ -87,16 +87,25 @@ That's it. `RestClientRegistry` discovers the `@Endpoint` field, `RestClientBind
 
 ## 📐 Architecture
 
-```
-Startup
-  IGuiceContext.instance()
-   └─ IGuicePreStartup hooks
-       └─ RestClientPreStartup         (scans for @Endpoint-annotated fields)
-   └─ IGuiceModule hooks
-       └─ RestClientBinder             (binds RestClient instances per @Named endpoint)
-           ├─ RestClientRegistry       (metadata: URL, types, security, options)
-           ├─ WebClient cache          (one Vert.x WebClient per endpoint)
-           └─ RestClientConfigurator   (SPI for custom WebClientOptions)
+```mermaid
+flowchart TD
+    n1["Startup"]
+    n2["IGuiceContext.instance()"]
+    n1 --> n2
+    n3["IGuicePreStartup hooks"]
+    n2 --> n3
+    n4["RestClientPreStartup<br/>scans for @Endpoint-annotated fields"]
+    n3 --> n4
+    n5["IGuiceModule hooks"]
+    n2 --> n5
+    n6["RestClientBinder<br/>binds RestClient instances per @Named endpoint"]
+    n5 --> n6
+    n7["RestClientRegistry<br/>metadata: URL, types, security, options"]
+    n6 --> n7
+    n8["WebClient cache<br/>one Vert.x WebClient per endpoint"]
+    n6 --> n8
+    n9["RestClientConfigurator<br/>SPI for custom WebClientOptions"]
+    n6 --> n9
 ```
 
 ### Request lifecycle
@@ -471,39 +480,58 @@ All failures — HTTP errors, deserialization errors, and transport errors — a
 
 ## 🔄 Startup Flow
 
-```
-IGuiceContext.instance()
- └─ IGuicePreStartup hooks
-     └─ RestClientPreStartup (sortOrder = MIN_VALUE + 100)
-         └─ RestClientRegistry.scanAndRegisterEndpoints()
-             ├─ ClassGraph scan for @Endpoint-annotated fields
-             ├─ Extract @Named binding name, URL, Send/Receive types
-             ├─ Wrap annotations with environment variable resolution
-             └─ Populate metadata maps (definitions, URLs, types)
- └─ IGuiceModule hooks
-     └─ RestClientBinder
-         ├─ scanAndRegisterEndpoints() (idempotent guard)
-         ├─ For each endpoint:
-         │   ├─ Build Key<RestClient<Send,Receive>> + @Named
-         │   ├─ Build WebClientOptions from @EndpointOptions
-         │   ├─ Apply RestClientConfigurator SPIs
-         │   ├─ Cache WebClient per endpoint name
-         │   └─ bind(key).toProvider(RestClient::new)
-         └─ InjectionPointProvider detects @Endpoint fields
+```mermaid
+flowchart TD
+    n1["IGuiceContext.instance()"]
+    n2["IGuicePreStartup hooks"]
+    n1 --> n2
+    n3["RestClientPreStartup<br/>sortOrder = MIN_VALUE + 100"]
+    n2 --> n3
+    n4["RestClientRegistry.scanAndRegisterEndpoints()"]
+    n3 --> n4
+    n5["ClassGraph scan for @Endpoint-annotated fields"]
+    n4 --> n5
+    n6["Extract @Named binding name, URL, Send/Receive types"]
+    n4 --> n6
+    n7["Wrap annotations with environment variable resolution"]
+    n4 --> n7
+    n8["Populate metadata maps<br/>definitions, URLs, types"]
+    n4 --> n8
+    n9["IGuiceModule hooks"]
+    n1 --> n9
+    n10["RestClientBinder"]
+    n9 --> n10
+    n11["scanAndRegisterEndpoints()<br/>idempotent guard"]
+    n10 --> n11
+    n12["For each endpoint:"]
+    n10 --> n12
+    n13["Build Key<RestClient<Send,Receive>> + @Named"]
+    n10 --> n13
+    n14["Build WebClientOptions from @EndpointOptions"]
+    n10 --> n14
+    n15["Apply RestClientConfigurator SPIs"]
+    n10 --> n15
+    n16["Cache WebClient per endpoint name"]
+    n10 --> n16
+    n17["bind(key).toProvider(RestClient::new)"]
+    n10 --> n17
+    n18["InjectionPointProvider detects @Endpoint fields"]
+    n10 --> n18
 ```
 
 ## 🗺️ Module Graph
 
-```
-com.guicedee.rest.client
- ├── com.guicedee.client              (GuicedEE SPI contracts, Environment)
- ├── com.guicedee.vertx               (Vert.x lifecycle, VertXPreStartup)
- ├── com.guicedee.jsonrepresentation   (DefaultObjectMapper binding)
- ├── io.vertx.web.client              (Vert.x WebClient)
- ├── io.vertx.core                    (Vert.x core, Future)
- ├── com.fasterxml.jackson.databind   (Jackson ObjectMapper)
- ├── io.smallrye.mutiny               (Uni reactive type)
- └── com.google.guice                 (Guice injection)
+```mermaid
+flowchart LR
+    com_guicedee_rest_client["com.guicedee.rest.client"]
+    com_guicedee_rest_client --> com_guicedee_client["com.guicedee.client<br/>GuicedEE SPI contracts, Environment"]
+    com_guicedee_rest_client --> com_guicedee_vertx["com.guicedee.vertx<br/>Vert.x lifecycle, VertXPreStartup"]
+    com_guicedee_rest_client --> com_guicedee_jsonrepresentation["com.guicedee.jsonrepresentation<br/>DefaultObjectMapper binding"]
+    com_guicedee_rest_client --> io_vertx_web_client["io.vertx.web.client<br/>Vert.x WebClient"]
+    com_guicedee_rest_client --> io_vertx_core["io.vertx.core<br/>Vert.x core, Future"]
+    com_guicedee_rest_client --> com_fasterxml_jackson_databind["com.fasterxml.jackson.databind<br/>Jackson ObjectMapper"]
+    com_guicedee_rest_client --> io_smallrye_mutiny["io.smallrye.mutiny<br/>Uni reactive type"]
+    com_guicedee_rest_client --> com_google_guice["com.google.guice<br/>Guice injection"]
 ```
 
 ## 🧩 JPMS
