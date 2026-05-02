@@ -56,7 +56,7 @@ public class RestClientRegistry
         if (scanned) return;
         scanned = true;
 
-        log.info("Scanning for @Endpoint-annotated RestClient fields");
+        log.debug("Scanning for @Endpoint-annotated RestClient fields");
 
         var classesWithFieldAnnotation = IGuiceContext.instance()
                 .getScanResult()

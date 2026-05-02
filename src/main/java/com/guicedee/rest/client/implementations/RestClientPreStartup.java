@@ -19,7 +19,7 @@ public class RestClientPreStartup implements IGuicePreStartup<RestClientPreStart
     @Override
     public List<Future<Boolean>> onStartup()
     {
-        log.info("RestClient pre-startup: scanning for @Endpoint annotations");
+        log.debug("RestClient pre-startup: scanning for @Endpoint annotations");
         RestClientRegistry.scanAndRegisterEndpoints();
         return List.of(Future.succeededFuture(true));
     }
