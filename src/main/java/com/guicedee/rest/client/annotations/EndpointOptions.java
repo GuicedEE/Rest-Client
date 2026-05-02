@@ -124,5 +124,32 @@ public @interface EndpointOptions
      * @return the retry delay
      */
     long retryDelay() default 1000;
-}
 
+    /**
+     * Custom User-Agent header string.
+     *
+     * @return the user agent (empty = default)
+     */
+    String userAgent() default "GuicedEE-RestClient/2.0";
+
+    /**
+     * Maximum number of WebSocket frame size in bytes (0 = Vert.x default).
+     *
+     * @return the max WebSocket frame size
+     */
+    int maxWebSocketFrameSize() default 0;
+
+    /**
+     * Whether HTTP pipelining is enabled for this endpoint.
+     *
+     * @return true to enable pipelining
+     */
+    boolean pipelining() default false;
+
+    /**
+     * Maximum number of concurrent requests queued when the pool is exhausted (0 = Vert.x default).
+     *
+     * @return the max wait queue size
+     */
+    int maxWaitQueueSize() default 0;
+}

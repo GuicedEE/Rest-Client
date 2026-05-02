@@ -12,6 +12,7 @@ module com.guicedee.rest.client {
     exports com.guicedee.rest.client.implementations;
 
     requires transitive com.guicedee.client;
+    requires java.net.http;
     requires io.vertx.web.client;
     requires io.vertx.core;
 

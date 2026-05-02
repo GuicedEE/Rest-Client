@@ -167,12 +167,24 @@ public class RestClientRegistry
         return new EndpointSecurity()
         {
             @Override public Class<? extends Annotation> annotationType() { return EndpointSecurity.class; }
-            @Override public SecurityType value() { return source.value(); }
+            @Override public SecurityType value() {
+                String override = resolveEnv("REST_CLIENT_AUTH_TYPE_" + bindingName, source.value().name());
+                try { return SecurityType.valueOf(override); }
+                catch (IllegalArgumentException e) { return source.value(); }
+            }
             @Override public String token() { return resolveEnv("REST_CLIENT_TOKEN_" + bindingName, source.token()); }
             @Override public String username() { return resolveEnv("REST_CLIENT_USERNAME_" + bindingName, source.username()); }
             @Override public String password() { return resolveEnv("REST_CLIENT_PASSWORD_" + bindingName, source.password()); }
             @Override public String apiKey() { return resolveEnv("REST_CLIENT_API_KEY_" + bindingName, source.apiKey()); }
             @Override public String apiKeyHeader() { return resolveEnv("REST_CLIENT_API_KEY_HEADER_" + bindingName, source.apiKeyHeader()); }
+            @Override public String oauth2TokenUrl() { return resolveEnv("REST_CLIENT_OAUTH2_TOKEN_URL_" + bindingName, source.oauth2TokenUrl()); }
+            @Override public String oauth2ClientId() { return resolveEnv("REST_CLIENT_OAUTH2_CLIENT_ID_" + bindingName, source.oauth2ClientId()); }
+            @Override public String oauth2ClientSecret() { return resolveEnv("REST_CLIENT_OAUTH2_CLIENT_SECRET_" + bindingName, source.oauth2ClientSecret()); }
+            @Override public String oauth2Scopes() { return resolveEnv("REST_CLIENT_OAUTH2_SCOPES_" + bindingName, source.oauth2Scopes()); }
+            @Override public String oauth2GrantType() { return resolveEnv("REST_CLIENT_OAUTH2_GRANT_TYPE_" + bindingName, source.oauth2GrantType()); }
+            @Override public String clientCertPath() { return resolveEnv("REST_CLIENT_CLIENT_CERT_PATH_" + bindingName, source.clientCertPath()); }
+            @Override public String clientCertPassword() { return resolveEnv("REST_CLIENT_CLIENT_CERT_PASSWORD_" + bindingName, source.clientCertPassword()); }
+            @Override public String clientCertType() { return resolveEnv("REST_CLIENT_CLIENT_CERT_TYPE_" + bindingName, source.clientCertType()); }
         };
     }
 
@@ -196,6 +208,10 @@ public class RestClientRegistry
             @Override public String defaultAccept() { return resolveEnv("REST_CLIENT_ACCEPT_" + bindingName, source.defaultAccept()); }
             @Override public int retryAttempts() { return Integer.parseInt(resolveEnv("REST_CLIENT_RETRY_ATTEMPTS_" + bindingName, String.valueOf(source.retryAttempts()))); }
             @Override public long retryDelay() { return Long.parseLong(resolveEnv("REST_CLIENT_RETRY_DELAY_" + bindingName, String.valueOf(source.retryDelay()))); }
+            @Override public String userAgent() { return resolveEnv("REST_CLIENT_USER_AGENT_" + bindingName, source.userAgent()); }
+            @Override public int maxWebSocketFrameSize() { return Integer.parseInt(resolveEnv("REST_CLIENT_MAX_WS_FRAME_SIZE_" + bindingName, String.valueOf(source.maxWebSocketFrameSize()))); }
+            @Override public boolean pipelining() { return Boolean.parseBoolean(resolveEnv("REST_CLIENT_PIPELINING_" + bindingName, String.valueOf(source.pipelining()))); }
+            @Override public int maxWaitQueueSize() { return Integer.parseInt(resolveEnv("REST_CLIENT_MAX_WAIT_QUEUE_SIZE_" + bindingName, String.valueOf(source.maxWaitQueueSize()))); }
         };
     }
 

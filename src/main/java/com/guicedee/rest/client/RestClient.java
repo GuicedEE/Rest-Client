@@ -397,6 +397,14 @@ public class RestClient<Send, Receive> {
                 String apiKey = resolveEnvPlaceholder(security.apiKey());
                 if (apiKey != null && !apiKey.isEmpty()) request.putHeader(security.apiKeyHeader(), apiKey);
             }
+            case OAuth2 -> {
+                String token = OAuth2TokenManager.getToken(endpointName, security);
+                if (token != null && !token.isEmpty()) request.bearerTokenAuthentication(token);
+            }
+            case MutualTLS -> {
+                // mTLS is configured at WebClientOptions level (client cert on the SSL context),
+                // no per-request header needed
+            }
             default -> { /* None */ }
         }
     }

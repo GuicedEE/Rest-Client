@@ -6,8 +6,11 @@ import com.guicedee.client.services.lifecycle.IGuiceModule;
 import com.guicedee.rest.client.RestClient;
 import com.guicedee.rest.client.annotations.Endpoint;
 import com.guicedee.rest.client.annotations.EndpointOptions;
+import com.guicedee.rest.client.annotations.EndpointSecurity;
 import com.guicedee.vertx.spi.VertXPreStartup;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PfxOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import lombok.extern.log4j.Log4j2;
@@ -103,7 +106,9 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
         options.setTrustAll(opts.trustAll());
         options.setVerifyHost(opts.verifyHost());
 
-        if (opts.maxPoolSize() > 0) options.setShared(true);
+        if (opts.maxPoolSize() > 0) {
+            options.setShared(true);
+        }
 
         options.setKeepAlive(opts.keepAlive());
         options.setDecompressionSupported(opts.decompression());
@@ -111,7 +116,34 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
 
         if (opts.maxRedirects() > 0) options.setMaxRedirects(opts.maxRedirects());
 
-        options.setUserAgent("GuicedEE-RestClient/2.0");
+        options.setUserAgent(opts.userAgent());
+        options.setPipelining(opts.pipelining());
+
+        // Mutual TLS — configure client certificate
+        EndpointSecurity security = endpoint.security();
+        if (security.value() == EndpointSecurity.SecurityType.MutualTLS)
+        {
+            String certPath = RestClient.resolveEnvPlaceholder(security.clientCertPath());
+            String certPassword = RestClient.resolveEnvPlaceholder(security.clientCertPassword());
+            String certType = RestClient.resolveEnvPlaceholder(security.clientCertType());
+
+            if (certPath != null && !certPath.isEmpty())
+            {
+                options.setSsl(true);
+                if ("JKS".equalsIgnoreCase(certType))
+                {
+                    options.setKeyCertOptions(new JksOptions()
+                            .setPath(certPath)
+                            .setPassword(certPassword != null ? certPassword : ""));
+                }
+                else
+                {
+                    options.setKeyCertOptions(new PfxOptions()
+                            .setPath(certPath)
+                            .setPassword(certPassword != null ? certPassword : ""));
+                }
+            }
+        }
 
         return options;
     }

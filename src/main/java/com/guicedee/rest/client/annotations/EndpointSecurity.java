@@ -68,6 +68,74 @@ public @interface EndpointSecurity
      */
     String apiKeyHeader() default "X-API-Key";
 
+    // ── OAuth2 / OIDC (Client Credentials or Authorization Code) ──
+
+    /**
+     * OAuth2 token endpoint URL for obtaining access tokens.
+     * Applied when {@link #value()} is {@link SecurityType#OAuth2}.
+     *
+     * @return the token URL
+     */
+    String oauth2TokenUrl() default "";
+
+    /**
+     * OAuth2 client ID.
+     * Applied when {@link #value()} is {@link SecurityType#OAuth2}.
+     *
+     * @return the client ID
+     */
+    String oauth2ClientId() default "";
+
+    /**
+     * OAuth2 client secret.
+     * Applied when {@link #value()} is {@link SecurityType#OAuth2}.
+     *
+     * @return the client secret
+     */
+    String oauth2ClientSecret() default "";
+
+    /**
+     * OAuth2 scopes (space-separated).
+     * Applied when {@link #value()} is {@link SecurityType#OAuth2}.
+     *
+     * @return the scopes
+     */
+    String oauth2Scopes() default "";
+
+    /**
+     * OAuth2 grant type (e.g. "client_credentials", "authorization_code").
+     * Applied when {@link #value()} is {@link SecurityType#OAuth2}.
+     *
+     * @return the grant type
+     */
+    String oauth2GrantType() default "client_credentials";
+
+    // ── Mutual TLS (Client Certificate) ──
+
+    /**
+     * Path to the client certificate keystore (JKS or PKCS12).
+     * Applied when {@link #value()} is {@link SecurityType#MutualTLS}.
+     *
+     * @return the keystore path
+     */
+    String clientCertPath() default "";
+
+    /**
+     * Password for the client certificate keystore.
+     * Applied when {@link #value()} is {@link SecurityType#MutualTLS}.
+     *
+     * @return the keystore password
+     */
+    String clientCertPassword() default "";
+
+    /**
+     * Keystore type for the client certificate (JKS, PKCS12).
+     * Applied when {@link #value()} is {@link SecurityType#MutualTLS}.
+     *
+     * @return the keystore type
+     */
+    String clientCertType() default "PKCS12";
+
     /**
      * Supported authentication strategies.
      */
@@ -92,6 +160,15 @@ public @interface EndpointSecurity
         /**
          * API key passed via a configurable header.
          */
-        ApiKey
+        ApiKey,
+        /**
+         * OAuth2 / OIDC — automatically obtains and refreshes access tokens
+         * using the configured token endpoint and client credentials.
+         */
+        OAuth2,
+        /**
+         * Mutual TLS (mTLS) — presents a client certificate for authentication.
+         */
+        MutualTLS
     }
 }
