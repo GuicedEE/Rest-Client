@@ -26,7 +26,7 @@ Built on [Vert.x Web Client](https://vertx.io/docs/vertx-web-client/java/) · [G
 <summary>Gradle (Kotlin DSL)</summary>
 
 ```kotlin
-implementation("com.guicedee:rest-client:2.0.1")
+implementation("com.guicedee:rest-client:2.0.2-SNAPSHOT")
 ```
 </details>
 
