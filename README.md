@@ -40,6 +40,7 @@ implementation("com.guicedee:rest-client:2.0.2-SNAPSHOT")
 - **Path parameters** — `{paramName}` placeholders in URLs with a fluent `pathParam()` builder, URL-encoded per RFC 3986
 - **Environment variable overrides** — every annotation attribute can be overridden via `REST_CLIENT_*` environment variables without code changes
 - **Package-level `@Endpoint`** — declare shared base URL and options on `package-info.java` for all clients in a package
+- **Service Registry integration** — bare service names and `registry:` prefixes auto-resolve from the service registry (optional module, no hard dependency)
 - **`RestClientConfigurator` SPI** — hook into WebClient construction for custom SSL, proxy, or other Vert.x options
 - **Rich error model** — `RestClientException` carries HTTP status, status message, response body, and cause with `isClientError()` / `isServerError()` / `isTransportError()` helpers
 - **Cached WebClients** — one `WebClient` per endpoint name, reused across injections
@@ -392,6 +393,53 @@ Where `<name>` is the `@Named` value of the endpoint.
           protocol = Protocol.HTTP2)
 @Named("http2-api")
 private RestClient<Void, StreamResponse> http2Client;
+```
+
+## 🌐 Service Registry Integration
+
+When the `service-registry` module is on the classpath, endpoint URLs are automatically resolved from the registry. No hard dependency is required — resolution uses reflection and gracefully falls back if the module is absent.
+
+### Three URL formats
+
+```java
+// 1. Explicit registry: prefix — always resolves from registry
+@Endpoint(url = "registry:jwebmp-website")
+@Named("jwebmp-api")
+private RestClient<Void, Response> client;
+
+// 2. Bare service name — if it matches a registered service, uses registry URL
+@Endpoint(url = "jwebmp-website")
+@Named("jwebmp-api")
+private RestClient<Void, Response> client;
+
+// 3. Full URL — passes through unchanged
+@Endpoint(url = "https://api.example.com/v1")
+@Named("example-api")
+private RestClient<Void, Response> client;
+```
+
+### How it works
+
+During endpoint scanning, `RestClientRegistry.resolveUrl()` checks:
+1. If the URL starts with `registry:` → resolves via `ServiceRegistry.resolve()`
+2. If the URL looks like a bare service name (no `://`, no leading `/`) → tries the registry
+3. If the service isn't found in the registry → falls through to use the original value
+
+This means you can use service names directly in `@Endpoint` annotations and the registry handles URL construction, health-aware routing, and environment-specific resolution.
+
+### Installation
+
+Just add both modules — no additional configuration needed:
+
+```xml
+<dependency>
+  <groupId>com.guicedee</groupId>
+  <artifactId>service-registry</artifactId>
+</dependency>
+<dependency>
+  <groupId>com.guicedee</groupId>
+  <artifactId>rest-client</artifactId>
+</dependency>
 ```
 
 ## 🔌 SPI Extension Points

@@ -234,7 +234,75 @@ public class RestClientRegistry
 
     static String resolveUrl(String value)
     {
-        return RestClient.resolveEnvPlaceholder(value);
+        String resolved = RestClient.resolveEnvPlaceholder(value);
+        // If value starts with "registry:" or looks like a bare service name (no scheme),
+        // attempt resolution via ServiceRegistry (optional module)
+        if (resolved != null && (resolved.startsWith("registry:") || isBareServiceName(resolved)))
+        {
+            String registryResolved = resolveViaServiceRegistry(resolved);
+            if (registryResolved != null)
+            {
+                return registryResolved;
+            }
+        }
+        return resolved;
+    }
+
+    /**
+     * Checks if the value looks like a bare service name (no "://" scheme, no leading "/").
+     * e.g. "jwebmp-website", "hello-service" — but NOT "https://..." or "/path"
+     */
+    private static boolean isBareServiceName(String value)
+    {
+        return value != null && !value.isEmpty()
+                && !value.contains("://")
+                && !value.startsWith("/")
+                && !value.startsWith("$");
+    }
+
+    /**
+     * Attempts to resolve a URL via the ServiceRegistry module (optional dependency).
+     * Uses reflection to avoid a hard compile-time dependency on com.guicedee.service.registry.
+     * Returns null if the module is not available or the service is not found.
+     */
+    private static String resolveViaServiceRegistry(String value)
+    {
+        try
+        {
+            Class<?> registryClass = Class.forName("com.guicedee.service.registry.ServiceRegistry");
+            var resolveMethod = registryClass.getMethod("resolve", String.class);
+            String prefixed = value.startsWith("registry:") ? value : "registry:" + value;
+            String result = (String) resolveMethod.invoke(null, prefixed);
+            if (result != null && !result.equals(prefixed))
+            {
+                log.debug("Resolved URL via ServiceRegistry: '{}' → '{}'", value, result);
+                return result;
+            }
+        }
+        catch (ClassNotFoundException ignored)
+        {
+            // service-registry module not on classpath — skip
+        }
+        catch (java.util.NoSuchElementException ignored)
+        {
+            // Service name not found in registry — fall through to use original value
+        }
+        catch (java.lang.reflect.InvocationTargetException e)
+        {
+            if (e.getCause() instanceof java.util.NoSuchElementException)
+            {
+                // Service name not found in registry — fall through
+            }
+            else
+            {
+                log.debug("Error resolving via ServiceRegistry: {}", e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+            }
+        }
+        catch (Exception e)
+        {
+            log.debug("ServiceRegistry resolution unavailable: {}", e.getMessage());
+        }
+        return null;
     }
 
     /**
