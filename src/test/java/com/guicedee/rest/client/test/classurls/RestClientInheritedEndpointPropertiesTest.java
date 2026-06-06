@@ -11,7 +11,6 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RestClientInheritedEndpointPropertiesTest {
-    @SuppressWarnings("BindingAnnotationWithoutInject")
     @Endpoint(url = "/test",
             method = "GET",
             options = @EndpointOptions(readTimeout = 5000)
