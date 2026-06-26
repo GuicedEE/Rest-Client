@@ -17,8 +17,8 @@ module com.guicedee.rest.client {
     requires io.vertx.core;
 
     requires transitive com.guicedee.jsonrepresentation;
-    requires transitive com.fasterxml.jackson.databind;
-    requires transitive com.fasterxml.jackson.core;
+    requires transitive tools.jackson.databind;
+    requires transitive tools.jackson.core;
 
     requires com.google.guice;
 
@@ -30,9 +30,9 @@ module com.guicedee.rest.client {
     requires jakarta.inject;
     requires com.guicedee.vertx;
 
-    opens com.guicedee.rest.client to com.google.guice, com.fasterxml.jackson.databind;
-    opens com.guicedee.rest.client.annotations to com.google.guice, com.fasterxml.jackson.databind;
-    opens com.guicedee.rest.client.implementations to com.google.guice, com.fasterxml.jackson.databind;
+    opens com.guicedee.rest.client to com.google.guice, tools.jackson.databind;
+    opens com.guicedee.rest.client.annotations to com.google.guice, tools.jackson.databind;
+    opens com.guicedee.rest.client.implementations to com.google.guice, tools.jackson.databind;
 
     provides IGuiceModule with RestClientBinder;
     provides IGuicePreStartup with RestClientPreStartup;

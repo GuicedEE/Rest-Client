@@ -1,7 +1,7 @@
 package com.guicedee.rest.client;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ObjectMapper;
 import com.guicedee.client.IGuiceContext;
 import com.guicedee.rest.client.annotations.Endpoint;
 import com.guicedee.rest.client.annotations.EndpointOptions;
@@ -89,9 +89,9 @@ public class RestClient<Send, Receive> {
         this.defaultMethod = HttpMethod.valueOf(endpoint.method());
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
+    // 
     // Public API
-    // ──────────────────────────────────────────────────────────────────────────
+    // 
 
     /**
      * Begins building a request with path parameters.
@@ -105,7 +105,7 @@ public class RestClient<Send, Receive> {
      * userClient.pathParam("userId", "42").send();
      * }</pre>
      *
-     * @param name  the path parameter name (without braces)
+     * @param name — the path parameter name (without braces)
      * @param value the value to substitute
      * @return a {@link RequestBuilder} for chaining further parameters and sending
      */
@@ -179,7 +179,7 @@ public class RestClient<Send, Receive> {
         /**
          * Sets a path parameter value.
          *
-         * @param name  the placeholder name (without braces)
+         * @param name — the placeholder name (without braces)
          * @param value the substitution value
          * @return this builder
          */
@@ -240,9 +240,9 @@ public class RestClient<Send, Receive> {
         }
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
+    // 
     // Internal — single execution path
-    // ──────────────────────────────────────────────────────────────────────────
+    // 
 
     @SuppressWarnings("unchecked")
     private Uni<Receive> doSend(Send body, Map<String, String> headers, Map<String, String> queryParams,
@@ -374,9 +374,9 @@ public class RestClient<Send, Receive> {
         });
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
+    // 
     // Authentication
-    // ──────────────────────────────────────────────────────────────────────────
+    // 
 
     private void applyAuthentication(HttpRequest<?> request) {
         EndpointSecurity security = endpoint.security();
@@ -409,9 +409,9 @@ public class RestClient<Send, Receive> {
         }
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
+    // 
     // Helpers
-    // ──────────────────────────────────────────────────────────────────────────
+    // 
 
     /**
      * Replaces {@code {paramName}} placeholders in the URL with URL-encoded values.
