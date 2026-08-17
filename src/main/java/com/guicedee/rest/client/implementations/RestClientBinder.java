@@ -79,7 +79,7 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
                 return new RestClient(webClient, wrappedEndpoint, bindingName, lazyResolvedUrl, sendType, receiveType, receiveClass);
             });
 
-            log.debug("Bound RestClient @Named(\"{}\") -> {}", bindingName, resolvedUrl);
+            log.trace("Bound RestClient @Named(\"{}\") -> {}", bindingName, resolvedUrl);
         }
     }
 

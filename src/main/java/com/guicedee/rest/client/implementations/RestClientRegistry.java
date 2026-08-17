@@ -97,7 +97,7 @@ public class RestClientRegistry
                                 packageBaseUrl = packageBaseUrl.substring(0, packageBaseUrl.length() - 1);
                             }
                             resolvedUrl = packageBaseUrl + resolvedUrl;
-                            log.debug("Resolved relative URL using package-level @Endpoint: {}", resolvedUrl);
+                            log.trace("Resolved relative URL using package-level @Endpoint: {}", resolvedUrl);
                         }
                     }
 
@@ -114,7 +114,7 @@ public class RestClientRegistry
                     endpointReceiveClasses.put(bindingName, receiveClass);
 
                     count++;
-                    log.debug("Registered REST endpoint: '{}' -> {} [Send={}, Receive={}] (field: {}.{})",
+                    log.trace("Registered REST endpoint: '{}' -> {} [Send={}, Receive={}] (field: {}.{})",
                             bindingName, resolvedUrl,
                             sendType.getTypeName(), receiveType.getTypeName(),
                             clazz.getSimpleName(), field.getName());
@@ -275,7 +275,7 @@ public class RestClientRegistry
             String result = (String) resolveMethod.invoke(null, prefixed);
             if (result != null && !result.equals(prefixed))
             {
-                log.debug("Resolved URL via ServiceRegistry: '{}' → '{}'", value, result);
+                log.trace("Resolved URL via ServiceRegistry: '{}' → '{}'", value, result);
                 return result;
             }
         }
@@ -295,12 +295,12 @@ public class RestClientRegistry
             }
             else
             {
-                log.debug("Error resolving via ServiceRegistry: {}", e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                log.warn("Error resolving via ServiceRegistry: {}", e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
             }
         }
         catch (Exception e)
         {
-            log.debug("ServiceRegistry resolution unavailable: {}", e.getMessage());
+            log.warn("ServiceRegistry resolution unavailable: {}", e.getMessage());
         }
         return null;
     }
