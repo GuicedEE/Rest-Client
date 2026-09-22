@@ -4,6 +4,7 @@ import com.google.inject.*;
 import com.google.inject.name.Names;
 import com.guicedee.client.services.lifecycle.IGuiceModule;
 import com.guicedee.rest.client.RestClient;
+import com.guicedee.rest.client.RestClientConfigurator;
 import com.guicedee.rest.client.annotations.Endpoint;
 import com.guicedee.rest.client.annotations.EndpointOptions;
 import com.guicedee.rest.client.annotations.EndpointSecurity;
@@ -17,6 +18,7 @@ import lombok.extern.log4j.Log4j2;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -73,7 +75,7 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
                 // concatenation and environment variable resolution)
                 String lazyResolvedUrl = RestClientRegistry.getEndpointBaseUrls().get(bindingName);
                 WebClient webClient = webClientCache.computeIfAbsent(bindingName, k -> {
-                    WebClientOptions options = buildWebClientOptions(wrappedEndpoint);
+                    WebClientOptions options = buildWebClientOptions(bindingName, wrappedEndpoint);
                     return WebClient.create(VertXPreStartup.getVertx(), options);
                 });
                 return new RestClient(webClient, wrappedEndpoint, bindingName, lazyResolvedUrl, sendType, receiveType, receiveClass);
@@ -87,6 +89,12 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
      * Builds Vert.x {@link WebClientOptions} from the {@link Endpoint} annotation.
      */
     static WebClientOptions buildWebClientOptions(Endpoint endpoint)
+    {
+        return buildWebClientOptions("", endpoint);
+    }
+
+    /** Builds options and applies endpoint-specific SPI customizations such as truststores. */
+    static WebClientOptions buildWebClientOptions(String endpointName, Endpoint endpoint)
     {
         EndpointOptions opts = endpoint.options();
         WebClientOptions options = new WebClientOptions();
@@ -143,6 +151,11 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
                             .setPassword(certPassword != null ? certPassword : ""));
                 }
             }
+        }
+
+        for (RestClientConfigurator configurator : ServiceLoader.load(RestClientConfigurator.class))
+        {
+            options = configurator.configure(endpointName, endpoint, options);
         }
 
         return options;

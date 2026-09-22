@@ -70,6 +70,10 @@
             <groupId>com.guicedee</groupId>
             <artifactId>inject</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.guicedee</groupId>
+            <artifactId>guiced-telemetry</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

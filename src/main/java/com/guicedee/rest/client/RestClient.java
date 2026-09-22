@@ -3,10 +3,12 @@ package com.guicedee.rest.client;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.ObjectMapper;
 import com.guicedee.client.IGuiceContext;
+import com.guicedee.telemetry.GuicedTelemetry;
 import com.guicedee.rest.client.annotations.Endpoint;
 import com.guicedee.rest.client.annotations.EndpointOptions;
 import com.guicedee.rest.client.annotations.EndpointSecurity;
 import io.smallrye.mutiny.Uni;
+import io.opentelemetry.api.trace.Span;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
@@ -23,6 +25,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.guicedee.client.implementations.ObjectBinderKeys.DefaultObjectMapper;
 
@@ -249,6 +252,7 @@ public class RestClient<Send, Receive> {
                                 Map<String, String> pathParams) {
         return Uni.createFrom().deferred(() -> {
             String resolvedUrl = resolvePathParams(baseUrl, pathParams);
+            AtomicReference<Span> spanRef = new AtomicReference<>();
             try {
                 URI uri = URI.create(resolvedUrl);
                 String host = uri.getHost();
@@ -270,6 +274,11 @@ public class RestClient<Send, Receive> {
 
                 HttpRequest<Buffer> raw = webClient.request(defaultMethod, port, host, path);
                 raw.ssl(isSsl);
+                final Span span = GuicedTelemetry.startClientSpan(defaultMethod.name(), resolvedUrl);
+                spanRef.set(span);
+                try (var ignored = GuicedTelemetry.makeCurrent(span)) {
+                    GuicedTelemetry.inject(raw.headers());
+                }
 
                 ObjectMapper objectMapper = IGuiceContext.get(DefaultObjectMapper);
 
@@ -330,9 +339,10 @@ public class RestClient<Send, Receive> {
                     vertxFuture = request.send();
                 }
 
-                return Uni.createFrom().completionStage(vertxFuture.toCompletionStage())
+                return GuicedTelemetry.finish(span, Uni.createFrom().completionStage(vertxFuture.toCompletionStage())
                         .map(resp -> {
                             int status = resp.statusCode();
+                            span.setAttribute("http.response.status_code", status);
                             if (status >= 200 && status < 300) {
                                 Buffer responseBuffer = resp.body();
                                 if (responseBuffer == null || responseBuffer.length() == 0) {
@@ -365,8 +375,9 @@ public class RestClient<Send, Receive> {
                             }
                             log.error("[{}] REST {} {} failed: {}", endpointName, defaultMethod, resolvedUrl, err.getMessage(), err);
                             return new RestClientException("[" + endpointName + "] REST " + defaultMethod + " " + resolvedUrl + " failed: " + err.getMessage(), err);
-                        });
+                        }));
             } catch (Exception e) {
+                GuicedTelemetry.end(spanRef.get(), e);
                 log.error("[{}] Error preparing REST request {} {}: {}", endpointName, defaultMethod, resolvedUrl, e.getMessage(), e);
                 return Uni.createFrom().failure(
                         new RestClientException("[" + endpointName + "] Error preparing REST request " + defaultMethod + " " + resolvedUrl + ": " + e.getMessage(), e));
