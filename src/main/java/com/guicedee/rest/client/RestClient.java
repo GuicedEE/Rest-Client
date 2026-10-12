@@ -353,6 +353,12 @@ public class RestClient<Send, Receive> {
                                         return (Receive) responseBuffer.toString();
                                     } else if (receiveClass == byte[].class) {
                                         return (Receive) responseBuffer.getBytes();
+                                    } else if (receiveClass == io.vertx.core.json.JsonObject.class) {
+                                        // Vert.x JSON trees are wire documents, not Jackson beans.
+                                        // Bean decoding can silently discard their top-level fields.
+                                        return (Receive) responseBuffer.toJsonObject();
+                                    } else if (receiveClass == io.vertx.core.json.JsonArray.class) {
+                                        return (Receive) responseBuffer.toJsonArray();
                                     } else if (receiveClass != null && receiveClass != Void.class && receiveClass != Object.class) {
                                         // Use full generic type so collections/arrays honour element types
                                         JavaType javaType = objectMapper.getTypeFactory().constructType(receiveType);

@@ -39,6 +39,11 @@ public final class TestHttpServer {
         server.requestHandler(req -> {
             String path = req.path();
             switch (path) {
+                case "/json-object" -> req.response().putHeader("Content-Type", "application/json")
+                        .end("{\"friends\":[],\"next\":null,\"detail\":{\"active\":true},\"revision\":7}");
+                case "/json-array" -> req.response().putHeader("Content-Type", "application/json")
+                        .end("[{\"active\":true},null,7]");
+                case "/json-invalid" -> req.response().putHeader("Content-Type", "application/json").end("{");
                 case "/test" ->
                     req.response()
                        .putHeader("Content-Type", "text/plain")
