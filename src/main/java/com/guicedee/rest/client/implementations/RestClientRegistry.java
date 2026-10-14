@@ -1,5 +1,7 @@
 package com.guicedee.rest.client.implementations;
 
+import com.guicedee.client.utils.ClassLoading;
+
 import com.google.inject.name.Named;
 import com.guicedee.client.IGuiceContext;
 import com.guicedee.rest.client.RestClient;
@@ -67,7 +69,7 @@ public class RestClientRegistry
         {
             try
             {
-                Class<?> clazz = classInfo.loadClass();
+                Class<?> clazz = ClassLoading.loadClass(classInfo);
                 for (Field field : clazz.getDeclaredFields())
                 {
                     if (Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers())) continue;
@@ -325,7 +327,7 @@ public class RestClientRegistry
                 var packageInfo = scanResult.getPackageInfo(packageName);
                 if (packageInfo != null)
                 {
-                    var annotationInfo = packageInfo.getAnnotationInfo(Endpoint.class.getName());
+                    var annotationInfo = packageInfo.getDirectAnnotationInfo(Endpoint.class.getName());
                     if (annotationInfo != null)
                     {
                         Object urlValue = annotationInfo.getParameterValues().getValue("url");
