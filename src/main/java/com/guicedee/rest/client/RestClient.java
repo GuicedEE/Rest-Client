@@ -27,7 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.guicedee.client.implementations.ObjectBinderKeys.DefaultObjectMapper;
+import static com.guicedee.modules.services.jsonrepresentation.ObjectBinderKeys.DefaultObjectMapper;
 
 /**
  * Injectable REST client wrapping a Vert.x {@link WebClient}, fully configured
