@@ -98,11 +98,12 @@ public class OAuth2TokenManager
 
     private static CachedToken fetchToken(String endpointName, EndpointSecurity security) throws Exception
     {
-        String tokenUrl = RestClient.resolveEnvPlaceholder(security.oauth2TokenUrl());
-        String clientId = RestClient.resolveEnvPlaceholder(security.oauth2ClientId());
-        String clientSecret = RestClient.resolveEnvPlaceholder(security.oauth2ClientSecret());
-        String scopes = RestClient.resolveEnvPlaceholder(security.oauth2Scopes());
-        String grantType = RestClient.resolveEnvPlaceholder(security.oauth2GrantType());
+        security = com.guicedee.rest.client.implementations.RestClientRegistry.wrapSecurity(security, endpointName);
+        String tokenUrl = security.oauth2TokenUrl();
+        String clientId = security.oauth2ClientId();
+        String clientSecret = security.oauth2ClientSecret();
+        String scopes = security.oauth2Scopes();
+        String grantType = security.oauth2GrantType();
 
         if (tokenUrl == null || tokenUrl.isEmpty())
         {

@@ -96,6 +96,7 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
     /** Builds options and applies endpoint-specific SPI customizations such as truststores. */
     static WebClientOptions buildWebClientOptions(String endpointName, Endpoint endpoint)
     {
+        endpoint = RestClientRegistry.wrapEndpoint(endpoint, endpointName);
         EndpointOptions opts = endpoint.options();
         WebClientOptions options = new WebClientOptions();
 
@@ -108,7 +109,7 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
         if (opts.connectTimeout() > 0) options.setConnectTimeout(opts.connectTimeout());
         if (opts.idleTimeout() > 0)    options.setIdleTimeout(opts.idleTimeout());
 
-        String resolvedUrl = RestClientRegistry.resolveUrl(endpoint.url());
+        String resolvedUrl = RestClientRegistry.resolveConfiguredUrl(endpoint.url());
         boolean needsSsl = opts.ssl() || (resolvedUrl != null && resolvedUrl.startsWith("https"));
         options.setSsl(needsSsl);
         options.setTrustAll(opts.trustAll());
@@ -131,9 +132,9 @@ public class RestClientBinder extends AbstractModule implements IGuiceModule<Res
         EndpointSecurity security = endpoint.security();
         if (security.value() == EndpointSecurity.SecurityType.MutualTLS)
         {
-            String certPath = RestClient.resolveEnvPlaceholder(security.clientCertPath());
-            String certPassword = RestClient.resolveEnvPlaceholder(security.clientCertPassword());
-            String certType = RestClient.resolveEnvPlaceholder(security.clientCertType());
+            String certPath = security.clientCertPath();
+            String certPassword = security.clientCertPassword();
+            String certType = security.clientCertType();
 
             if (certPath != null && !certPath.isEmpty())
             {

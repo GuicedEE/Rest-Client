@@ -83,13 +83,13 @@ public class RestClient<Send, Receive> {
     public RestClient(WebClient webClient, Endpoint endpoint, String endpointName, String baseUrl,
                       Type sendType, Type receiveType, Class<?> receiveClass) {
         this.webClient = webClient;
-        this.endpoint = endpoint;
+        this.endpoint = com.guicedee.rest.client.implementations.RestClientRegistry.wrapEndpoint(endpoint, endpointName);
         this.endpointName = endpointName;
         this.baseUrl = baseUrl;
         this.sendType = sendType;
         this.receiveType = receiveType;
         this.receiveClass = receiveClass != null ? (Class<Receive>) receiveClass : (Class<Receive>) Object.class;
-        this.defaultMethod = HttpMethod.valueOf(endpoint.method());
+        this.defaultMethod = HttpMethod.valueOf(this.endpoint.method());
     }
 
     // 
@@ -401,17 +401,17 @@ public class RestClient<Send, Receive> {
 
         switch (security.value()) {
             case Bearer, JWT -> {
-                String token = resolveEnvPlaceholder(security.token());
+                String token = security.token();
                 if (token != null && !token.isEmpty()) request.bearerTokenAuthentication(token);
             }
             case Basic -> {
-                String username = resolveEnvPlaceholder(security.username());
-                String password = resolveEnvPlaceholder(security.password());
+                String username = security.username();
+                String password = security.password();
                 if (username != null && !username.isEmpty())
                     request.basicAuthentication(username, password != null ? password : "");
             }
             case ApiKey -> {
-                String apiKey = resolveEnvPlaceholder(security.apiKey());
+                String apiKey = security.apiKey();
                 if (apiKey != null && !apiKey.isEmpty()) request.putHeader(security.apiKeyHeader(), apiKey);
             }
             case OAuth2 -> {
@@ -468,6 +468,6 @@ public class RestClient<Send, Receive> {
 
     public static String resolveEnvPlaceholder(String value) {
         if (value == null || value.isEmpty()) return value;
-        return com.guicedee.client.Environment.getSystemPropertyOrEnvironment(value, value);
+        return com.guicedee.client.Environment.resolveAnnotationValue(value);
     }
 }

@@ -87,7 +87,7 @@ public class RestClientRegistry
                     }
 
                     Endpoint wrapped = wrapEndpoint(endpointAnnotation, bindingName);
-                    String resolvedUrl = resolveUrl(wrapped.url());
+                    String resolvedUrl = resolveConfiguredUrl(wrapped.url());
 
                     // If the URL is relative (starts with /), look for a package-level @Endpoint
                     // on the closest enclosing package-info.java and prepend its base URL
@@ -146,9 +146,14 @@ public class RestClientRegistry
     // Annotation wrapping (environment variable resolution)
     // ──────────────────────────────────────────────────────────────────────────
 
-    private static Endpoint wrapEndpoint(Endpoint source, String bindingName)
+    private interface ResolvedEndpoint extends Endpoint {}
+    private interface ResolvedSecurity extends EndpointSecurity {}
+
+    /** Applies normal endpoint overrides and annotation text resolution once. */
+    public static Endpoint wrapEndpoint(Endpoint source, String bindingName)
     {
-        return new Endpoint()
+        if (source instanceof ResolvedEndpoint) return source;
+        return new ResolvedEndpoint()
         {
             @Override public Class<? extends Annotation> annotationType() { return Endpoint.class; }
             @Override public String url() { return resolveEnv("REST_CLIENT_URL_" + bindingName, source.url()); }
@@ -164,9 +169,11 @@ public class RestClientRegistry
         };
     }
 
-    private static EndpointSecurity wrapSecurity(EndpointSecurity source, String bindingName)
+    /** Resolves raw security annotations; already resolved views retain their values. */
+    public static EndpointSecurity wrapSecurity(EndpointSecurity source, String bindingName)
     {
-        return new EndpointSecurity()
+        if (source == null || source instanceof ResolvedSecurity) return source;
+        return new ResolvedSecurity()
         {
             @Override public Class<? extends Annotation> annotationType() { return EndpointSecurity.class; }
             @Override public SecurityType value() {
@@ -236,7 +243,12 @@ public class RestClientRegistry
 
     static String resolveUrl(String value)
     {
-        String resolved = RestClient.resolveEnvPlaceholder(value);
+        return resolveConfiguredUrl(RestClient.resolveEnvPlaceholder(value));
+    }
+
+    /** Resolves registry routing after configuration resolution, without another bare lookup. */
+    static String resolveConfiguredUrl(String resolved)
+    {
         // If value starts with "registry:" or looks like a bare service name (no scheme),
         // attempt resolution via ServiceRegistry (optional module)
         if (resolved != null && (resolved.startsWith("registry:") || isBareServiceName(resolved)))
