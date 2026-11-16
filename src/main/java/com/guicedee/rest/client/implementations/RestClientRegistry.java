@@ -1,6 +1,7 @@
 package com.guicedee.rest.client.implementations;
 
 import com.guicedee.client.utils.ClassLoading;
+import com.guicedee.client.utils.Discovery;
 
 import com.google.inject.name.Named;
 import com.guicedee.client.IGuiceContext;
@@ -60,16 +61,14 @@ public class RestClientRegistry
 
         log.debug("Scanning for @Endpoint-annotated RestClient fields");
 
-        var classesWithFieldAnnotation = IGuiceContext.instance()
-                .getScanResult()
-                .getClassesWithFieldAnnotation(Endpoint.class);
+        var classesWithFieldAnnotation = Discovery.classesWithFieldAnnotation(Endpoint.class);
 
         int count = 0;
         for (var classInfo : classesWithFieldAnnotation)
         {
             try
             {
-                Class<?> clazz = ClassLoading.loadClass(classInfo);
+                Class<?> clazz = classInfo;
                 for (Field field : clazz.getDeclaredFields())
                 {
                     if (Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers())) continue;
@@ -330,13 +329,21 @@ public class RestClientRegistry
     private static String resolvePackageBaseUrl(Class<?> clazz)
     {
         String packageName = clazz.getPackageName();
-        var scanResult = IGuiceContext.instance().getScanResult();
+        var scanResult = Discovery.scanResult();
 
         while (!packageName.isEmpty())
         {
             try
             {
-                var packageInfo = scanResult.getPackageInfo(packageName);
+                if (scanResult == null) {
+                    for (Package pkg : Discovery.registeredPackages()) {
+                        if (pkg.getName().equals(packageName)) {
+                            Endpoint endpoint = pkg.getDeclaredAnnotation(Endpoint.class);
+                            if (endpoint != null && !endpoint.url().isEmpty()) return resolveUrl(endpoint.url());
+                        }
+                    }
+                }
+                var packageInfo = scanResult == null ? null : scanResult.getPackageInfo(packageName);
                 if (packageInfo != null)
                 {
                     var annotationInfo = packageInfo.getDirectAnnotationInfo(Endpoint.class.getName());
